@@ -7,7 +7,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
 
-const BOT_TOKEN =9159186893:'AAGYUHqXYvum71_-z0blahlSa8OibygjOlg';
+const 'BOT_TOKEN = 9159186893:'AAGYUHqXYvum71_-z0blahlSa8OibygjOlg';
 const TG_API = `https://telegram.org{BOT_TOKEN}`;
 
 const phoneToChatId = {};
