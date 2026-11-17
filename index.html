@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beredgram</title>
+<style>
+body { margin: 0; padding: 0; background: #0e1621; color: #fff; font-family: sans-serif; }
+* { box-sizing: border-box; }
+#login-view { padding: 30px 20px; max-width: 400px; margin: 0 auto; text-align: center; }
+.logo { width: 64px; height: 64px; background: #5288c1; border-radius: 50%; margin: 0 auto 15px; line-height: 64px; font-size: 28px; font-weight: bold; }
+.box { background: #17212b; padding: 20px; border-radius: 14px; margin-top: 15px; }
+input, select { width: 100%; padding: 14px; margin-bottom: 12px; border-radius: 10px; border: 1px solid #2b3948; background: #242f3d; color: #fff; font-size: 16px; }
+.btn { display: block; width: 100%; padding: 14px; border: none; border-radius: 10px; background: #5288c1; color: #fff; font-size: 16px; font-weight: bold; cursor: pointer; text-decoration: none; text-align: center; }
+.btn-tg { background: #2aabee; margin-bottom: 12px; }
+.btn-red { background: #e53935; margin-top: 10px; }
+.btn-orange { background: #fb8c00; margin-top: 8px; }
+
+#main-view { display: none; padding-bottom: 70px; }
+.header { background: #17212b; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #000; }
+.bal { background: #242f3d; padding: 5px 10px; border-radius: 14px; color: #ffb300; font-size: 13px; font-weight: bold; }
+.page { display: none; padding: 15px; }
+.page.active { display: block; }
+
+.hero { background: #17212b; padding: 20px; border-radius: 16px; text-align: center; position: relative; margin-bottom: 15px; }
+.stage { position: relative; width: 120px; height: 120px; margin: 0 auto 10px; }
+.ava { width: 76px; height: 76px; background: #5288c1; border-radius: 50%; position: absolute; top: 22px; left: 22px; line-height: 76px; font-size: 28px; font-weight: bold; border: 2px solid #7ab3ef; }
+.fly { position: absolute; font-size: 24px; animation: bob 2.5s infinite ease-in-out; }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.item { background: #242f3d; padding: 10px; border-radius: 12px; text-align: center; }
+.item.pinned { border: 2px solid #ffb300; }
+
+.msg { background: #182533; padding: 10px 12px; border-radius: 12px; margin-bottom: 8px; }
+.msg.me { background: #2b5278; }
+.author { color: #6ab2f2; font-weight: bold; font-size: 13px; margin-bottom: 4px; cursor: pointer; }
+
+.tabbar { position: fixed; bottom: 0; left: 0; right: 0; background: #17212b; display: flex; border-top: 1px solid #000; }
+.tabbtn { flex: 1; padding: 12px 4px; text-align: center; color: #7f91a4; font-size: 12px; font-weight: bold; cursor: pointer; }
+.tabbtn.active { color: #5288c1; }
+
+#profile-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); padding: 20px; overflow-y: auto; z-index: 999; }
+</style>
+</head>
+<body>
+
+<div id="login-view">
+    <div class="logo">B</div>
+    <h2 style="margin:0;">Beredgram</h2>
+    <p style="color:#7f91a4; font-size:14px;">Код подтверждения придет в Telegram</p>
+    <div id="err-msg" style="color:#ff5252; font-size:14px; margin-bottom:10px;"></div>
+
+    <div class="box" id="box-phone">
+        <a href="https://t.me" target="_blank" class="btn btn-tg">
+            1. Открыть бота и привязать номер
+        </a>
+        <input type="tel" id="inp-phone" placeholder="2. Введите номер (+79009774026)">
+        <button type="button" class="btn" onclick="getSms()">Получить код в Telegram</button>
+    </div>
+
+    <div class="box" id="box-code" style="display:none;">
+        <p style="font-size:13px; color:#6ab2f2; margin-top:0;">Мы отправили 5-значный код вам в личные сообщения в Telegram!</p>
+        <input type="number" id="inp-code" placeholder="Введите код из Telegram">
+        <button type="button" class="btn" onclick="checkSms()">Войти в аккаунт</button>
+    </div>
+</div>
+
+<div id="main-view">
+    <div class="header">
+        <strong>Beredgram</strong>
+        <div>
+            <span class="bal"><span id="b-stars">0</span> ⭐</span>
+            <span class="bal"><span id="b-grams">0</span> 💎</span>
+        </div>
+    </div>
+
+    <div id="p-profile" class="page active">
+        <div class="hero">
+            <div class="stage" id="my-stage"><div class="ava" id="my-ava">B</div></div>
+            <h2 id="my-title" style="margin:0 0 4px;">Пользователь</h2>
+            <div id="my-sub" style="font-size:13px; color:#7f91a4;"></div>
+        </div>
+
+        <div class="box">
+            <h4 style="margin:0 0 8px; color:#5288c1;">Мои подарки (нажмите, чтобы закрепить)</h4>
+            <div class="grid" id="my-gifts-box"></div>
+        </div>
+
+        <div class="box">
+            <h4 style="margin:0 0 8px; color:#5288c1;">Установить Юз</h4>
+            <input type="text" id="inp-uz" placeholder="Например: king">
+            <div id="uz-status" style="font-size:13px; margin-bottom:8px;"></div>
+            <button type="button" class="btn" onclick="setUz()">Занять юз</button>
+        </div>
+
+        <button type="button" class="btn btn-red" onclick="exitAcc()">Выйти</button>
+    </div>
+
+    <div id="p-chat" class="page">
+        <div id="chat-list" style="margin-bottom:12px;"></div>
+        <input type="text" id="inp-msg" placeholder="Написать сообщение...">
+        <button type="button" class="btn" onclick="postMsg()">Отправить</button>
+    </div>
+
+    <div id="p-gifts" class="page">
+        <h3 style="margin-top:0;">Магазин подарков</h3>
+        <p style="font-size:12px; color:#7f91a4;">Скидка 20% на обычные, 50% на элитные</p>
+        <div class="grid" id="shop-list"></div>
+    </div>
+
+    <div id="p-admin" class="page">
+        <h3 style="color:#ffb300; margin-top:0;">👑 Админ-панель Владельца</h3>
+
+        <div class="box">
+            <h4 style="margin:0 0 8px; color:#ffb300;">Начислить валюту</h4>
+            <input type="tel" id="adm-p1" placeholder="Номер (+7...)">
+            <input type="number" id="adm-s" placeholder="Звёзды">
+            <input type="number" id="adm-g" placeholder="Граммы">
+            <button type="button" class="btn" onclick="giveMoney()">Начислить</button>
+        </div>
+
+        <div class="box">
+            <h4 style="margin:0 0 8px; color:#ffb300;">Подарить подарок</h4>
+            <input type="tel" id="adm-p2" placeholder="Номер (+7...)">
+            <select id="adm-sel"></select>
+            <button type="button" class="btn" onclick="givePresent()">Подарить</button>
+        </div>
+
+        <div class="box">
+            <h4 style="margin:0 0 8px; color:#ffb300;">Модерация</h4>
+            <input type="tel" id="adm-p3" placeholder="Номер (+7...)">
+            <input type="number" id="adm-m" placeholder="Мут (минут)">
+            <button type="button" class="btn" onclick="doMute()">Мут</button>
+            <button type="button" class="btn btn-orange" onclick="doFreeze()">Заморозка</button>
+            <button type="button" class="btn btn-red" onclick="doDelete()">Удалить аккаунт</button>
+        </div>
+
+        <div class="box">
+            <h4 style="margin:0 0 8px; color:#ffb300;">Все пользователи</h4>
+            <div id="users-list" style="font-size:13px;"></div>
+        </div>
+    </div>
+
+    <div class="tabbar">
+        <div class="tabbtn active" id="t-profile" onclick="openPage('profile', this)">👤 Профиль</div>
+        <div class="tabbtn" id="t-chat" onclick="openPage('chat', this)">💬 Чат</div>
+        <div class="tabbtn" id="t-gifts" onclick="openPage('gifts', this)">🎁 Подарки</div>
+        <div class="tabbtn" id="t-admin" style="display:none; color:#ffb300;" onclick="openPage('admin', this)">👑 Админ</div>
+    </div>
+</div>
+
+<div id="profile-modal">
+    <div style="background:#17212b; padding:16px; border-radius:16px; max-width:380px; margin:20px auto;">
+        <button type="button" class="btn" style="background:#242f3d; margin-bottom:12px;" onclick="document.getElementById('profile-modal').style.display='none'">Закрыть ✖</button>
+        <div class="hero" style="background:#0e1621;">
+            <div class="stage" id="other-stage"><div class="ava" id="other-ava">U</div></div>
+            <h2 id="other-name" style="margin:0 0 4px;"></h2>
+            <div id="other-sub" style="font-size:13px; color:#7f91a4;"></div>
+        </div>
+        <h4>Подарки пользователя:</h4>
+        <div class="grid" id="other-gifts"></div>
+    </div>
+</div>
+
+<script>
+var OWNER = "+79009774026";
+var activePhone = "";
+
+var GIFTS = [
+    { id: 1, name: "Мишка", icon: "🧸", price: 100, elite: false },
+    { id: 2, name: "Роза", icon: "🌹", price: 250, elite: false },
+    { id: 3, name: "Кубок", icon: "🏆", price: 1000, elite: true },
+    { id: 4, name: "Бриллиант", icon: "💎", price: 5000, elite: true }
+];
+
+var db = { users: {}, msgs: [] };
+db.users[OWNER] = {
+    phone: OWNER, uz: "owner", stars: 999999999, grams: 999999999,
+    owner: true, frozen: false, mute: 0,
+    gifts: [
+        { icon: "💎", name: "Бриллиант", pin: true },
+        { icon: "🏆", name: "Кубок", pin: true }
+    ]
+};
+db.msgs.push({ phone: OWNER, sender: "@owner", text: "Добро пожаловать в Beredgram!" });
+
+function cleanPhone(val) {
+    var d = (val || "").replace(/\D/g, "");
+    if (d.length === 11 && (d.charAt(0) === "7" || d.charAt(0) === "8")) return "+7" + d.slice(1);
+    return d ? "+" + d : "";
+}
+
+async function getSms() {
+    var p = cleanPhone(document.getElementById("inp-phone").value);
+    var err = document.getElementById("err-msg");
+
+    if (p.length < 11) {
+        err.innerText = "Введите номер из 11 цифр (например +79009774026)";
+        return;
+    }
+    if (db.users[p] && db.users[p].frozen) {
+        err.innerText = "Этот аккаунт заморожен!";
+        return;
+    }
+
+    err.innerText = "Отправка кода в Telegram...";
+    try {
